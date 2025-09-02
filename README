@@ -1,0 +1,233 @@
+
+🔑 Step 1: Setup WhatsApp Cloud API
+
+1. Create a Meta Developer Account
+
+Go to Meta for Developers.
+
+Log in with your Facebook account.
+
+
+2. Create a New App
+
+Navigate to My Apps → Create App.
+
+Choose Business as the app type.
+
+Give your app a name (e.g., MarketingBot).
+
+
+3. Add WhatsApp to Your App
+
+In your app dashboard → Add product → WhatsApp.
+
+Select or create a Meta Business Account.
+
+
+4. Get Access Token & Phone Number ID
+
+Go to Business Settings → System Users.
+
+Create a System User with Admin role.
+
+Generate a permanent access token with these permissions:
+
+whatsapp_business_messaging
+
+whatsapp_business_management
+
+
+Copy your Phone Number ID from WhatsApp Manager.
+
+
+5. Register Your Business Phone Number
+
+In WhatsApp Manager, add your phone number.
+
+Verify it with OTP.
+
+This number will send messages.
+
+
+6. Create a Marketing Message Template
+
+Go to WhatsApp Manager → Message Templates → Create.
+
+Fill in details:
+
+Name: promo_offer
+
+Category: Marketing
+
+Language: English (US)
+
+Body:
+
+Hello {{1}}, 🎉 Get 20% OFF on all items today!  
+Shop now: {{2}}
+
+
+Submit and wait for Meta approval.
+
+
+
+---
+
+📂 Step 2: Project Structure
+
+whatsapp-marketing/
+│── customers.csv        # Customer list (name, phone)
+│── bulk_whatsapp.py     # Python script to send messages
+│── README.md            # Documentation (this file)
+
+
+---
+
+📝 Step 3: Create customers.csv
+
+Example file:
+
+name,phone
+John,+14155550101
+Sara,+14155550102
+David,+14155550103
+
+⚠️ Use full international format with + and country code.
+
+
+---
+
+💻 Step 4: Create bulk_whatsapp.py
+
+import requests
+import pandas as pd
+
+# Replace with your details
+ACCESS_TOKEN = "YOUR_WHATSAPP_ACCESS_TOKEN"
+PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID"
+
+def send_marketing_message(recipient_phone, customer_name, promo_link):
+    url = f"https://graph.facebook.com/v20.0/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient_phone,
+        "type": "template",
+        "template": {
+            "name": "promo_offer",  # <-- Your approved template name
+            "language": {"code": "en_US"},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [
+                        {"type": "text", "text": customer_name},
+                        {"type": "text", "text": promo_link}
+                    ]
+                }
+            ]
+        }
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 200:
+        print(f"✅ Sent to {recipient_phone}: {response.json()}")
+    else:
+        print(f"❌ Error sending to {recipient_phone}: {response.text}")
+
+def bulk_send(csv_file, promo_link):
+    df = pd.read_csv(csv_file)
+    for _, row in df.iterrows():
+        send_marketing_message(row['phone'], row['name'], promo_link)
+
+if __name__ == "__main__":
+    bulk_send("customers.csv", "https://yourstore.com/sale")
+
+
+---
+
+▶️ Step 5: Run the Campaign
+
+1. Update your ACCESS_TOKEN and PHONE_NUMBER_ID in the script.
+
+
+2. Place your customers.csv in the project folder.
+
+
+3. Run the script:
+
+python bulk_whatsapp.py
+
+
+4. Customers will receive a personalized WhatsApp marketing message.
+
+
+
+
+---
+
+📸 Step 6: Sending Media (Optional)
+
+If your template supports media (image/video), modify the payload:
+
+"components": [
+    {
+        "type": "header",
+        "parameters": [
+            {"type": "image", "image": {"link": "https://yourstore.com/product.jpg"}}
+        ]
+    },
+    {
+        "type": "body",
+        "parameters": [
+            {"type": "text", "text": customer_name},
+            {"type": "text", "text": promo_link}
+        ]
+    }
+]
+
+
+---
+
+📅 Step 7: Scheduling Messages (Optional)
+
+To send messages automatically at a specific time (e.g., 10 AM daily), install schedule:
+
+pip install schedule
+
+Example usage:
+
+import schedule
+import time
+
+schedule.every().day.at("10:00").do(bulk_send, "customers.csv", "https://yourstore.com/sale")
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+
+
+---
+
+⚠️ Notes
+
+WhatsApp requires approved templates for marketing messages.
+
+Avoid spam — too many reports can restrict your business number.
+
+Pricing: You are charged per message (see Meta Pricing).
+
+
+
+---
+
+✅ Next Steps
+
+Automate campaigns with CRON jobs or schedulers.
+
+Track delivery + engagement using message IDs from API responses.
+
+Integrate with your CRM or e-commerce store for targeted marketing.
